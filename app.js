@@ -18,7 +18,8 @@ const {
 } = require("./paymo");
 const {
   getSickDays,
-  getVacationDays
+  getVacationDays,
+  setSickOrVacation
 } = require("./gSheet");
 const {
   createSickDayEvent,
@@ -133,6 +134,7 @@ app.event("app_mention", async ({
           publishTestMessage(`You have ${sickDays} sick day(s) remaining`);
         } else if (text.includes("set")) {
           createSickDayEvent(username, auth);
+          setSickOrVacation({ username, sickOrVacation: 's', auth })
           publishTestMessage("Your sick day has been set");
         } else {
           publishTestMessage(
@@ -147,6 +149,7 @@ app.event("app_mention", async ({
           );
         } else if (text.includes("set")) {
           createVacationDayEvent(username, auth);
+          setSickOrVacation({ username, sickOrVacation: '1', auth })
           publishTestMessage("Your vacation day has been set");
         } else {
           publishTestMessage(
