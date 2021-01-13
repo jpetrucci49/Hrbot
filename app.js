@@ -1,46 +1,27 @@
-const {
-  App
-} = require("@slack/bolt");
-const {
-  WebClient
-} = require("@slack/web-api");
-const {
-  google
-} = require("googleapis");
-const {
-  _
-} = require("lodash");
+const { App } = require("@slack/bolt");
+const { WebClient } = require("@slack/web-api");
+const { google } = require("googleapis");
+const { _ } = require("lodash");
 const request = require("request");
-const {
-  requestPaymo,
-  requestHours,
-  requestTimesheet
-} = require("./paymo");
-const {
-  getSickDays,
-  getVacationDays,
-  setSickOrVacation
-} = require("./gSheet");
-const {
-  createSickDayEvent,
-  createVacationDayEvent
-} = require("./gCal");
+const { requestPaymo, requestHours, requestTimesheet } = require("./paymo");
+const { getSickDays, getVacationDays } = require("./gSheet");
+const { createSickDayEvent, createVacationDayEvent } = require("./gCal");
 
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
-  signingSecret: process.env.SLACK_SIGNING_SECRET
+  signingSecret: process.env.SLACK_SIGNING_SECRET,
 });
 
 const keyFile = "credentials.json";
 const scopes = [
   "https://www.googleapis.com/auth/calendar",
   "https://www.googleapis.com/auth/calendar.events",
-  "https://www.googleapis.com/auth/spreadsheets"
+  "https://www.googleapis.com/auth/spreadsheets",
 ];
 
 const auth = new google.auth.GoogleAuth({
   keyFile,
-  scopes
+  scopes,
 });
 
 const client = new WebClient();
@@ -50,7 +31,7 @@ const client = new WebClient();
 async function findConversation(name) {
   try {
     const result = await app.client.conversations.list({
-      token: process.env.SLACK_BOT_TOKEN
+      token: process.env.SLACK_BOT_TOKEN,
     });
 
     for (const channel of result.channels) {
@@ -70,7 +51,7 @@ async function publishMessage(channel, text) {
     const result = await app.client.chat.postMessage({
       token: process.env.SLACK_BOT_TOKEN,
       channel: foundChannel,
-      text: text
+      text: text,
     });
   } catch (error) {
     console.error(error);
@@ -81,32 +62,32 @@ function publishTestMessage(text) {
   return publishMessage("hrbot-tests", text);
 }
 
-async function messageUser(userId, message, app) {
-  await app.client.chat.postMessage({
-    token: process.env.SLACK_BOT_TOKEN,
-    channel: userId,
-    text: message
-  });
+async function messageChannel(id, text) {
+  try {
+    const result = await app.client.chat.postMessage({
+      token: process.env.SLACK_BOT_TOKEN,
+      channel: id,
+      text: text,
+    });
+    return result;
+  } catch (e) {
+    console.log(e);
+  }
 }
 
 async function findUser(userId) {
   const author = await client.users.info({
     user: userId,
-    token: process.env.SLACK_BOT_TOKEN
+    token: process.env.SLACK_BOT_TOKEN,
   });
   return author.user.profile.real_name;
 }
 
 // interactions
 
-app.event("app_mention", async ({
-  event
-}) => {
+app.event("app_mention", async ({ event }) => {
   try {
-    const {
-      text,
-      user
-    } = event;
+    const { channel, text, user } = event;
 
     const hrTopics = [
       "sick",
@@ -119,10 +100,10 @@ app.event("app_mention", async ({
       "time",
       "paymo",
       "help",
-      "who"
+      "who",
     ];
 
-    if (hrTopics.some(r => text.split(" ").includes(r))) {
+    if (hrTopics.some((r) => text.split(" ").includes(r))) {
       const combined = [hrTopics, text.split(" ")].flat();
       const word = combined.filter((w, i) => combined.indexOf(w) !== i && w);
       const username = await findUser(event.user);
@@ -172,11 +153,10 @@ app.event("app_mention", async ({
         publishTestMessage("poke");
       } else if (word == "paymo") {
         if (text.includes("timesheet")) {
-          console.log('here');
           const taskId = text.toLowerCase().substring(text.indexOf("|") + 2);
-          requestTimesheet(username, taskId, publishTestMessage);
+          requestTimesheet(username, taskId, messageChannel, channel);
         } else if (text.includes("tasks")) {
-          requestPaymo(username, publishTestMessage);
+          requestPaymo(username, messageChannel, channel);
         } else {
           publishTestMessage(
             "To add time to your Paymo timesheet, please type `@hrbot paymo timesheet | <taskId>`. If you're not sure of your taskId, please type `@hrbot paymo tasks` for a list."
