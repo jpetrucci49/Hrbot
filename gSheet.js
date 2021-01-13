@@ -72,12 +72,12 @@ async function setSickOrVacation({ spreadSheetTab, username, sickOrVacation, aut
     }
   });
 
-	const res = await sheets.spreadsheets.values.update({
-		spreadsheetId: spreadsheetId,
-		range: `${customRange}!${dateColumn + userRow}`, // selects targeted cell
-		valueInputOption: 'USER_ENTERED',
-		resource: { values: [[sickOrVacation]] },
-	});
+  const res = await sheets.spreadsheets.values.update({
+    spreadsheetId: spreadsheetId,
+    range: `${customRange}!${dateColumn + userRow}`, // selects targeted cell
+    valueInputOption: 'USER_ENTERED',
+    resource: { values: [[sickOrVacation]] },
+  });
 }
 
 module.exports = {
