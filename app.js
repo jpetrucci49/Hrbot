@@ -117,7 +117,6 @@ app.event("app_mention", async ({
       "tea",
       "time",
       "paymo",
-      "timesheet",
       "help",
       "who"
     ];
@@ -170,15 +169,17 @@ app.event("app_mention", async ({
         publishTestMessage("poke");
       } else if (word == "paymo") {
         if (text.includes("timesheet")) {
-          requestTimesheet(username);
+          console.log('here');
+          const taskId = text.toLowerCase().substring(text.indexOf("|") + 2);
+          requestTimesheet(username, taskId, publishTestMessage);
         } else if (text.includes("tasks")) {
-          requestPaymo(username);
+          requestPaymo(username, publishTestMessage);
         } else {
           publishTestMessage(
             "To add time to your Paymo timesheet, please type `@hrbot paymo timesheet | <taskId>`. If you're not sure of your taskId, please type `@hrbot paymo tasks` for a list."
           );
         }
-      } else if (word == "timesheet") {}
+      }
     } else {
       publishTestMessage(
         `Sorry, I may not be able to help you with that. These are the topics I have information on: ${hrTopics.join(
